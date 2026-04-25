@@ -33,6 +33,7 @@ No production-ready pipeline code is included — samples are illustrative only.
 - Use the `shared/` folder for principles that apply across all pipelines.
 
 ##  Navigation
+```
   DevSecOps/
 │
 ├── infra-pipeline/
@@ -51,3 +52,4 @@ No production-ready pipeline code is included — samples are illustrative only.
 │       └── docs.md          (principles common across all languages)
 │
 └── README.md
+```
