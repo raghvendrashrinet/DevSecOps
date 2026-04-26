@@ -21,7 +21,7 @@ repos:
         entry: trufflehog git file://. --since-commit HEAD --only-verified --fail
         language: golang
 ```
-
+### For gitleak CI Go to  -- > [01.Git.md ](01.Git.md)
 ### Secret Scan in CI Workflow with Trufflehog
 [TruffleHog](https://docs.trufflesecurity.com/pre-commit-hooks)   
 
