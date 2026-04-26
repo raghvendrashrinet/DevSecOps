@@ -21,3 +21,45 @@ repos:
         entry: trufflehog git file://. --since-commit HEAD --only-verified --fail
         language: golang
 ```
+
+### Secret Scan in CI Workflow with Trufflehog
+[TruffleHog](https://docs.trufflesecurity.com/pre-commit-hooks)   
+
+ --> .github/workflows/secret-scan.yml
+```  
+name: Secret Scanning
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  trufflehog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Essential: scans full history, not just the latest commit
+
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified --fail
+```
+
+Why this configuration is effective:  
+ - fetch-depth: 0: By default, GitHub Actions only downloads the latest commit. Setting this to 0 ensures TruffleHog scans the entire Git history.
+ - --only-verified: This tells TruffleHog to only fail the build if it finds a secret it can verify as active (e.g., a real AWS key), reducing annoying false alarms.
+ - --fail: This ensures the CI pipeline stops and turns red if a secret is found, preventing the code from being merged or deployed
+
+### Commit and Push
+Once you save the file, commit it and push to GitHub:
+```
+ git add .github/workflows/secret-scan.yml
+ git commit -m "Add TruffleHog CI scanning"
+ git push origin main
+
