@@ -1,53 +1,101 @@
-#### Add this to --> .github/workflows/devsecops.yml 
-
-name: "Infrastructure Security & Quality"
+name: "Azure Golden Pipeline"
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+    branches: [ main ]
+  push:
     branches: [ main ]
 
 jobs:
-  security-scans:
-    name: DevSecOps Scans
+  # --- STAGE 1: SECRETS SCANNING ---
+  secrets_scan:
+    name: Secrets Detection
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # TruffleHog needs history to scan commits
+          fetch-depth: 0
 
-      # 1. Checkov: Policy-as-Code
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
+      - name: Gitleaks (Fast Local Check)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: TruffleHog (Enterprise Verification)
+        uses: trufflesecurity/trufflehog@main
         with:
-          directory: Infra-pipeline/Terraform/
-          framework: terraform
-          quiet: true # Only show failed checks
+          base: ${{ github.event.pull_request.base.sha }}
+          head: ${{ github.event.pull_request.head.sha }}
+          extra_args: --only-verified
 
-      # 2. tfsec: Deep Terraform Security
-      - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          working_directory: Infra-pipeline/Terraform/
+  # --- STAGE 2: LINTING & LOGIC ---
+  validate_and_lint:
+    name: Terraform Linting
+    needs: secrets_scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      # 3. TFLint: Code Quality & Cloud Validation
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v3
         with:
-          tflint_version: latest
+          tflint_version: v0.50.0
+
+      - name: Init TFLint Azure Plugin
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run TFLint
-        run: |
-          tflint --init
-          tflint -f compact
+        run: tflint -f compact --recursive
 
-      # 4. TruffleHog: Secret Scanning
-      - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@main
+  # --- STAGE 3: SECURITY & COMPLIANCE ---
+  security_audit:
+    name: IaC Security Scan
+    needs: validate_and_lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: tfsec (Fast Security Scan)
+        uses: aquasecurity/tfsec-action@v1.0.0
         with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-          extra_args: --only-verified
+          soft_fail: false
+
+      - name: Checkov (Deep Compliance)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform
+          # soft_fail: true  # Toggle this to 'true' if just starting out!
+
+  # --- STAGE 4: TERRAFORM PLAN ---
+  terraform_plan:
+    name: Azure TF Plan
+    needs: security_audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
