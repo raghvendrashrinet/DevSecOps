@@ -1,0 +1,53 @@
+#### Add this to --> .github/workflows/devsecops.yml 
+
+name: "Infrastructure Security & Quality"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scans:
+    name: DevSecOps Scans
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # TruffleHog needs history to scan commits
+
+      # 1. Checkov: Policy-as-Code
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: Infra-pipeline/Terraform/
+          framework: terraform
+          quiet: true # Only show failed checks
+
+      # 2. tfsec: Deep Terraform Security
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: Infra-pipeline/Terraform/
+
+      # 3. TFLint: Code Quality & Cloud Validation
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint -f compact
+
+      # 4. TruffleHog: Secret Scanning
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
