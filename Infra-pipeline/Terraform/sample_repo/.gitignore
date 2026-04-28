@@ -1,0 +1,24 @@
+# Local object persistence
+.terraform/
+
+# .tfstate files contain secrets; keep them out of source control
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+
+# Ignore variables files which may contain secrets
+*.tfvars
+*.tfvars.json
+
+# Ignore overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Ignore plan files
+*.tfplan
