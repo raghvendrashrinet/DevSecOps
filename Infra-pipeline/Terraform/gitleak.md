@@ -83,5 +83,6 @@ flowchart TD
     B -->|No secret| D[Commit proceeds]
     D --> E[Push to Remote Repo]
     E --> F[CI/CD Pipeline: Gitleaks Scan]
-    F -->|Secret detected| G[Pipeline fails - secret masked (--redact)]
+    F -->|Secret detected| G["Pipeline fails - secret masked (--redact)"]
     F -->|No secret| H[Pipeline continues to deploy]
+
