@@ -1,1 +1,13 @@
-terraform
+1. .gitignore add
+2. pre-commit check in the local repo
+    precommit install on local ( pip install gitleaks)
+   create a storage account 
+       - setup terraform 
+          prepare terraform manifest files  -- to enforce 
+3 once i push code to remote repo for ci pipeline
+      trufflehog check
+       tflint
+       tfsec
+       checkovs
+
+ 
