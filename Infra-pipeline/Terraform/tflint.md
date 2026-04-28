@@ -1,23 +1,69 @@
-While Checkov and tfsec focus on security, TFLint focuses on code quality and cloud-specific error
+## TFLint: The Infrastructure Linter
+TFLint is a Terraform linter focused on checking for errors that are specific to cloud providers.Code quality check
+While terraform validate checks if your syntax is correct, TFLint checks if your logic is valid for the specific cloud (e.g., AWS, Azure, GCP)
 
-TFLintProblemTerraform's built-in terraform validate only checks for basic syntax. It won't catch:Invalid EC2 instance types (e.g., t2.microo).Naming convention violations.Cloud-specific errors before you run terraform plan.Unused declarations (variables or locals).What Is TFLint?TFLint is a Terraform linter that finds errors that the official compiler misses. It is pluggable, meaning it has specific rulesets for AWS, Azure, and GCP.Step 1: Install TFLintUsing Homebrew (macOS/Linux):Bashbrew install tflint
-Using Chocolatey (Windows):Bashchoco install tflint
-Using Docker:Bashdocker pull ghcr.io/terraform-linters/tflint
-Step 2: Initialize TFLintTFLint requires a configuration file named .tflint.hcl in your root directory to enable cloud-specific rules.Create .tflint.hcl:Terraformconfig {
+## 🛡️ Why TFLint? (The Manager's View)
+TFLint acts as the first line of defense in our Golden Pipeline by catching "expensive" mistakes before they reach the plan stage:
+- Cloud Provider Validation: It catches invalid instance types (e.g., trying to use a t2.micro in a region where it doesn't exist).
+- Enforcing Best Practices: It flags issues like missing mandatory tags or naming convention violations.-
+- Reducing Pipeline Waste: It catches errors locally so developers don't have to wait 5 minutes for a CI/CD  pipeline to fail.
+
+## 🛠️ Setup & Installation
+1. Install TFLint
+```
+pip install tflint
+
+# Windows (Chocolatey)
+choco install tflint
+```
+2. Configure the Azure Plugin
+To audit Azure resources, you must initialize the Azurerm ruleset. Create a .tflint.hcl file in your repository root:
+```
+config {
   module = true
-  force = false
+  force  = false
 }
 
-plugin "aws" {
+plugin "azurerm" {
     enabled = true
-    version = "0.28.0"
-    source  = "github.com/terraform-linters/tflint-ruleset-aws"
+    version = "0.27.0"
+    source  = "github.com/terraform-linters/tflint-ruleset-azurerm"
 }
-Then, run the init command to install the plugin:Bashtflint --init
-Step 3: Run a ScanRun the linter on your current directory:Bashtflint
-Step 4: Example Error DetectionIf you have a resource with an invalid instance type:Terraformresource "aws_instance" "web" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t2.microo" # Typo: extra 'o'
-}
-TFLint Output:PlaintextError: "t2.microo" is an invalid value as instance_type (aws_instance_invalid_type)
-Best PracticesUse with Plugins: Always enable the plugin for your specific cloud provider (AWS/Azure/GCP).Pre-commit Hook: Integrate TFLint so your code is "clean" before it ever reaches a human reviewer.Deep Checking: Use TFLint to enforce team standards, such as mandatory tags on all resources.The Terraform Security Stack SummaryToolWhat it catchesCheckovCompliance & Security PoliciestfsecVulnerabilities & Best PracticesTFLintCloud-specific errors & Code QualityTruffleHogSecrets & Credentials in code
+```
+Run the initialization:
+```
+tflint --init
+```
+###  🔍 Usage Manual
+#### Local Scanning
+Run this command before every commit to ensure your cloud resources are valid:
+```
+tflint --recursive
+```
+#### Integration with Pre-commit
+Add this to your .pre-commit-config.yaml to automate the check:
+```
+- repo: https://github.com/terraform-linters/tflint
+  rev: v0.50.0
+  hooks:
+    - id: tflint
+      args: ["--config=.tflint.hcl"]
+```
+### 🚀 Golden Pipeline Integration
+In our GoldenPipeline, TFLint runs immediately after terraform fmt. It serves as a Quality Gate.
+``` YAML
+# Example Step for Azure Pipeline
+- script: |
+    tflint --init
+    tflint --recursive --check
+  displayName: 'Linter: TFLint Azure Scan'
+```
+[!IMPORTANT]
+If TFLint finds an error, the pipeline will stop. This ensures that only "deployable" code is passed to the security scanners (tfsec/Checkov).
+Feature,terraform validate,TFLint (Azure Ruleset)
+Syntax Check,✅ Yes,✅ Yes
+Azure VM SKUs,❌ No,✅ Yes
+Storage Naming Rules,❌ No,✅ Yes
+Deprecated Attributes,⚠️ Partial,✅ Yes
+
+By enforcing the Azurerm ruleset, we reduce the number of "Trial and Error" deployments.
