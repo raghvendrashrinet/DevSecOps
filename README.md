@@ -38,11 +38,11 @@ DevSecOps/
 │
 ├── Infra-pipeline/
 │   └── Terraform/
-│       ├── 01.GoldenPipeline_Rule.md  
-│       ├── Checkov.md                 
-│       ├── tfsec.md                   
-│       ├── OIDC_Secretless_Auth.md    
-│       └── devsecops.yaml             
+|       ├──01.GoldenPipeline_Rule.md   <-- 1. READ FIRST (Standards & Compliance)
+│       ├── Checkov.md                  <-- 2. LOCAL SCAN (Static Analysis)
+│       ├── tfsec.md                    <-- 3. LOCAL SCAN (Security Defaults)
+│       ├── OIDC_Secretless_Auth.md     <-- 4. PIPELINE AUTH (Identity Setup)
+│       └── devsecops.yaml              <-- 5. DEPLOY (The Automated Workflow)           
 │
 ├── App-pipeline/
 │   ├── npm/
@@ -52,8 +52,8 @@ DevSecOps/
 │       ├── SAST/                      (Static Analysis - Sonar/CodeQL)
 │       └── SCA/                       (Dependency Scanning & Remediation)
 │
-├── 01.Git.md                          
-├── gitleaks-trufflehog.md             
-├── layered defense.md                 
-└── README.md
+├── 01.Git.md                          <-- Pre-Commit: Local Git hooks & security basics
+├── gitleaks-trufflehog.md             <-- Secret Detection: Preventing credential leaks
+├── layered defense.md                 <-- Strategy: The "Defense in Depth" philosophy
+└── README.md                          <-- You are here: Documentation Index
 ```
