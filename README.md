@@ -34,22 +34,26 @@ No production-ready pipeline code is included — samples are illustrative only.
 
 ##  Navigation
 ```
-  DevSecOps/
+DevSecOps/
 │
-├── infra-pipeline/
-│   └── terraform/
-│       ├── docs.md          (concepts, IaC security practices)
-│       └── sample-repo/     (example Terraform repo demonstrating secure IaC)
+├── Infra-pipeline/
+│   └── Terraform/
+│       ├── 01.GoldenPipeline_Rule.md  
+│       ├── Checkov.md                 
+│       ├── tfsec.md                   
+│       ├── OIDC_Secretless_Auth.md    
+│       └── devsecops.yaml             
 │
-├── app-pipeline/
+├── App-pipeline/
 │   ├── npm/
-│   │   ├── docs.md          (Node.js DevSecOps practices)
-│   │   └── sample-repo/     (example Node.js app with secure pipeline concepts)
 │   ├── python/
-│   │   ├── docs.md          (Python DevSecOps practices)
-│   │   └── sample-repo/     (example Python app with secure pipeline concepts)
-│   └── shared/
-│       └── docs.md          (principles common across all languages)
+│   └── shared/                        <-- New Modular Structure
+│       ├── DAST/                      (Dynamic Analysis - ZAP/Burp)
+│       ├── SAST/                      (Static Analysis - Sonar/CodeQL)
+│       └── SCA/                       (Dependency Scanning & Remediation)
 │
+├── 01.Git.md                          
+├── gitleaks-trufflehog.md             
+├── layered defense.md                 
 └── README.md
 ```
